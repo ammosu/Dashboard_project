@@ -1,7 +1,6 @@
-# fastapi_app.py
 import os
 import pandas as pd
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Union
 from dotenv import load_dotenv
@@ -18,16 +17,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-df = pd.read_excel(os.getenv('EXCEL'), index_col=0)
-df['evaluation_results'] = df['evaluation_results'].str[:-1].astype(float)
+# 初始化全局變量來保存處理後的數據
+df = None
 
-@app.get("/data")
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    global df
+    contents = await file.read()
+    df = pd.read_excel(contents)
+    df['evaluation_results'] = df['evaluation_results'].str[:-1].astype(float)
+    return {"message": "File uploaded and processed successfully"}
+
+@app.get("/api/data")
 async def get_data(
     evaluation_method: str = Query(None),
     age: Union[float, None] = Query(None),
     training_period: Union[int, None] = Query(None),
     counties: List[str] = Query(None)
 ):
+    if df is None:
+        return {"error": "No data uploaded"}
+    
     filtered_df = df.copy()
     print(f"Received filters - Evaluation Method: {evaluation_method}, Age: {age}, Training Period: {training_period}, Counties: {counties}")
 
@@ -50,8 +60,11 @@ async def get_data(
 
     return filtered_df.to_dict(orient="records")
 
-@app.get("/filters")
+@app.get("/api/filters")
 async def get_filters():
+    if df is None:
+        return {"error": "No data uploaded"}
+    
     filters = {
         "evaluation_methods": df['evaluation_method'].unique().tolist(),
         "ages": df['AGE'].unique().tolist(),
@@ -60,7 +73,7 @@ async def get_filters():
     }
     return filters
 
-@app.get("/color-config")
+@app.get("/api/color-config")
 async def get_color_config():
     return {
         os.getenv('REACT_APP_MODEL_1_NAME'): os.getenv('REACT_APP_MODEL_1_COLOR'),
@@ -70,4 +83,3 @@ async def get_color_config():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
