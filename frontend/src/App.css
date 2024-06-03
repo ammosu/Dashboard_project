@@ -6,6 +6,24 @@
   height: 40vmin;
   pointer-events: none;
 }
+/* src/App.css */
+.App {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+.filters {
+  margin-bottom: 20px;
+}
+
+.filters label {
+  display: block;
+  margin-bottom: 10px;
+}
+
+select, input {
+  margin-left: 10px;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
