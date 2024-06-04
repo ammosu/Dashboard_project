@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import api from './api'; // 引入 axios 實例
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
@@ -40,13 +40,7 @@ const App = () => {
     }
   }, [isUploaded]);
 
-  useEffect(() => {
-    if (selectedMethod && selectedAge && selectedPeriod && selectedCounties.length > 0 && isUploaded) {
-      fetchData();
-    }
-  }, [selectedMethod, selectedAge, selectedPeriod, selectedCounties, isUploaded]);
-
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     console.log('Sending counties:', selectedCounties);
     api.get('/api/data', {
       params: {
@@ -74,7 +68,13 @@ const App = () => {
       console.log('Filtered data:', formattedData);  // 調試信息
     })
     .catch(error => console.error('Error fetching filtered data:', error));
-  };
+  }, [selectedMethod, selectedAge, selectedPeriod, selectedCounties]);
+
+  useEffect(() => {
+    if (selectedMethod && selectedAge && selectedPeriod && selectedCounties.length > 0 && isUploaded) {
+      fetchData();
+    }
+  }, [selectedMethod, selectedAge, selectedPeriod, selectedCounties, isUploaded, fetchData]);
 
   const formatData = (rawData) => {
     const groupedData = rawData.reduce((acc, curr) => {
@@ -203,4 +203,3 @@ const App = () => {
 };
 
 export default App;
-
